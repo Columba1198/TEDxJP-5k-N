@@ -25,6 +25,27 @@ Japanese ASR benchmarks that can be obtained without an application process are 
 
 TEDx recordings are also clean and unhurried, which says little about how a system behaves on a fast talker in a noisy room over a poor connection.
 
+## The TEDxJP-5K sets
+
+The source talks and the caption format are the same across the three datasets. What changes is the audio and the choice of segments.
+
+| | [TEDxJP-5K-V](https://github.com/Columba1198/TEDxJP-5K-V) | TEDxJP-5K-N | [TEDxJP-5K-C](https://github.com/Columba1198/TEDxJP-5K-C) |
+|---|---|---|---|
+| Measures | long-form accuracy | robustness to noise | use of preceding context |
+| Audio | clean | playback speed, background music, white noise, lossy codecs | clean |
+| Choice of segments | spread thinly over the talks | identical to -V | consecutive (698 sequences) |
+| Is the preceding segment in the dataset? | rarely | rarely | usually |
+| Segment length | uniform 2.0 to 30.0 s, mean 16.0 s | same cuts as -V; 1.4 to 30.0 s, mean 15.1 s after the speed changes | uniform 2.0 to 30.0 s, mean 16.0 s |
+| Segments / talks | 5,000 / 257 | 5,000 / 257 | 5,000 / 257 |
+| Total audio | 22.2 h | 20.9 h | 22.2 h |
+| Reference characters | 409,033 | 409,033 | 410,838 |
+| Utterance ids | all 5,000 shared with -N | all 5,000 shared with -V | 67 coincide with -V and -N |
+
+-V and -N cut their segments at the same points, so their scores can be compared directly and the difference between them is a measure of robustness.
+-C uses almost entirely different segments, so its score cannot be compared directly against either.
+
+`prev_context.json` in this dataset is *reconstructed* from the caption track, because the preceding segments are not in it. TEDxJP-5K-C contains them.
+
 ## Variety and noise
 
 Segmentation, identical to TEDxJP-5K-V:
@@ -74,6 +95,7 @@ Noise is applied to locate the point where a model breaks down, so it goes up to
 ## Layout
 
 ```
+prev_context.json  up to 8 preceding segments per utterance
 plan.json          segmentation: source talk, cut range, reference text
 augment.jsonl      the noise applied to each segment
 manifest.jsonl     NeMo-style manifest, one line per segment
@@ -82,6 +104,12 @@ segments utt2spk spk2utt   Kaldi-style metadata
 rebuild.py         downloads the talks and music, regenerates clips/
 clips/ source/ bgm/    produced by rebuild.py, not tracked
 ```
+
+`prev_context.json` holds, for each segment, the captions of up to eight
+segments that come before it in the same talk, oldest first. It exists to
+measure features that condition on preceding context, such as Whisper's
+`--condition-on-previous-text`: score the set once without it and once with it,
+and the difference is what the conditioning is worth.
 
 ## Rebuilding
 
@@ -122,10 +150,31 @@ YouTubeで公開されている、日本語のTEDxトークから作成しまし
 
 申請なしで入手できる日本語ASRベンチマークは少なく、既存のものは測れる範囲が限られています。
 
-- Common Voice ja は読み上げ音声で平均4秒程度です。長尺での精度を計測できないうえ、音声と一致しない字幕も含まれます。
+- Common Voice は読み上げ音声で平均4秒程度です。長尺での精度を計測できないうえ、音声と一致しない字幕も含まれます。
 - TEDxJP-10K は字幕の質が高い一方、1発話が字幕1キューなので最長でも約11秒です。字幕は逐語寄りで、フィラーが手作業で追加され、アラビア数字が漢数字に書き換えられています。
 
 また、TEDxの録音は聞き取りやすい音声のため、雑音の多い環境や早口の話者、高圧縮といった条件での精度は計測できません。
+
+## TEDxJP-5K の3セット
+
+元トークと字幕のフォーマットは3つのデータセットで共通です。違うのは、音声とセグメントの選び方です。
+
+| | [TEDxJP-5K-V](https://github.com/Columba1198/TEDxJP-5K-V) | TEDxJP-5K-N | [TEDxJP-5K-C](https://github.com/Columba1198/TEDxJP-5K-C) |
+|---|---|---|---|
+| 測るもの | 長尺での精度 | 雑音への耐性 | 直前の文脈の活用 |
+| 音声 | 無加工 | ノイズを追加（雑音追加、速度変更など） | 無加工 |
+| セグメントの選び方 | トーク全体から薄く広く | -V と同一 | 連続（698シーケンス） |
+| 直前のセグメントがデータセット内にあるか | ほぼ無い | ほぼ無い | ほぼ有る |
+| セグメント長 | 2.0〜30.0秒を均一分布、平均16.0秒 | 切れ目は -V と同一。速度変更後は1.4〜30.0秒、平均15.1秒 | 2.0〜30.0秒を均一分布、平均16.0秒 |
+| セグメント数 / トーク数 | 5,000 / 257 | 5,000 / 257 | 5,000 / 257 |
+| 合計 | 22.2 時間 | 20.9 時間 | 22.2 時間 |
+| 字幕文字数 | 409,033 | 409,033 | 410,838 |
+| 発話ID | 5,000本すべて -N と共通 | 5,000本すべて -V と共通 | 67本が -V / -N と一致 |
+
+-Vと-Nはセグメントの分割位置が同じなので、スコアを直接比較できます。スコアの差がロバスト性の指標になります。
+-Cは採用したセグメントがほぼ異なるため、スコアの直接比較はできません。
+
+本データセットの `prev_context.json` は、直前のセグメントがデータセット内に無いため字幕から**再構成**したものです。TEDxJP-5K-C にはそれが実体として含まれています。
 
 ## 考慮した多様性とノイズ
 
@@ -167,7 +216,7 @@ YouTubeで公開されている、日本語のTEDxトークから作成しまし
 - 字幕は逐語記録ではなく読みやすさを優先しており、フィラーは書かれていません。言い淀みまで書き起こすシステムは挿入誤りとして減点されます。
 - 数字は半角アラビア数字です。
 - 字幕には句読点と記号が残っています。CERの計算前に、空白とあわせて字幕とモデル出力の両方から除去してください。
-- BGMは DOVA-SYNDROME の楽曲です。同サイトの規約により AI モデルの学習への使用は禁止されています。評価目的でのみ使用してください。
+- BGMは DOVA-SYNDROME の楽曲です。同サイトの規約によりAIモデルの学習への使用は禁止されています。評価目的でのみ使用してください。
 - ボーカル入りの楽曲が含まれている可能性があります。歌詞が書き起こされると挿入誤りになります。使用楽曲は `augment.jsonl` に記録しているので、特定の楽曲を除外することもできます。
 - 音声は同梱していません。TEDxトークは CC BY-NC-ND 4.0 ライセンスのため、本リポジトリには分割情報と字幕のみを収録しています。`rebuild.py` を実行することで、データセットを再構築できます。
 - 動画が非公開化または削除されると、そのセグメントは再構築できません。`rebuild.py` は該当分をスキップして一覧を表示します。楽曲が入手できない場合も同様にスキップされ、そのセグメントにはBGMが入りません。
@@ -176,6 +225,7 @@ YouTubeで公開されている、日本語のTEDxトークから作成しまし
 ## ディレクトリ構成
 
 ```
+prev_context.json  各セグメントの直前最大8セグメント分の字幕
 plan.json          分割情報（元トーク・切り出し範囲・字幕）
 augment.jsonl      各セグメントに適用したノイズの記録
 manifest.jsonl     NeMo形式マニフェスト。1行1セグメント
@@ -184,6 +234,8 @@ segments utt2spk spk2utt   Kaldi形式メタデータ
 rebuild.py         元トークと楽曲を取得し clips/ を生成
 clips/ source/ bgm/    rebuild.py が生成（追跡対象外）
 ```
+
+`prev_context.json` は、各セグメントの直前にあたる同一トーク内の字幕を、古い順に最大8個ずつ収めたものです。Whisperの `--condition-on-previous-text` のような、直前の文脈に条件付けする機能の性能測定に使えます。文脈なしと文脈ありで2回スコアを取れば、その差が条件付けの効果になります。
 
 ## 再構築
 
