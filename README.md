@@ -74,6 +74,7 @@ Noise is applied to locate the point where a model breaks down, so it goes up to
 ## Layout
 
 ```
+prev_context.json  up to 8 preceding segments per utterance
 plan.json          segmentation: source talk, cut range, reference text
 augment.jsonl      the noise applied to each segment
 manifest.jsonl     NeMo-style manifest, one line per segment
@@ -82,6 +83,12 @@ segments utt2spk spk2utt   Kaldi-style metadata
 rebuild.py         downloads the talks and music, regenerates clips/
 clips/ source/ bgm/    produced by rebuild.py, not tracked
 ```
+
+`prev_context.json` holds, for each segment, the captions of up to eight
+segments that come before it in the same talk, oldest first. It exists to
+measure features that condition on preceding context, such as Whisper's
+`--condition-on-previous-text`: score the set once without it and once with it,
+and the difference is what the conditioning is worth.
 
 ## Rebuilding
 
@@ -176,6 +183,7 @@ YouTubeで公開されている、日本語のTEDxトークから作成しまし
 ## ディレクトリ構成
 
 ```
+prev_context.json  各セグメントの直前最大8セグメント分の字幕
 plan.json          分割情報（元トーク・切り出し範囲・字幕）
 augment.jsonl      各セグメントに適用したノイズの記録
 manifest.jsonl     NeMo形式マニフェスト。1行1セグメント
@@ -184,6 +192,8 @@ segments utt2spk spk2utt   Kaldi形式メタデータ
 rebuild.py         元トークと楽曲を取得し clips/ を生成
 clips/ source/ bgm/    rebuild.py が生成（追跡対象外）
 ```
+
+`prev_context.json` は、各セグメントの直前にあたる同一トーク内の字幕を、古い順に最大8個ずつ収めたものです。Whisperの `--condition-on-previous-text` のような、直前の文脈に条件付けする機能の性能測定に使えます。文脈なしと文脈ありで2回スコアを取れば、その差が条件付けの効果になります。
 
 ## 再構築
 
